@@ -119,7 +119,7 @@ def graphical_run_game(game_master):
 def refresh_delay(game_master, event_type, result):
     import time
     risk.logger.debug("delaying refresh...")
-    time.sleep(1/2)
+    time.sleep(1.0/2)
 
 def display_refresh(game_master, event_type=None, result=None):
     import pygame
