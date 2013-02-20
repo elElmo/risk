@@ -25,6 +25,7 @@ class GameMaster(object):
         # need to setup with settings later
         self.ended = False
         self.end_turn_callbacks = []
+        self.end_action_callbacks = []
         self.players = []
         self._current_player = 0
         self._num_players = num_players
@@ -71,6 +72,9 @@ class GameMaster(object):
     def add_end_turn_callback(self, callback):
         self.end_turn_callbacks.append(callback)
 
+    def add_end_action_callback(self, callback):
+        self.end_action_callbacks.append(callback)
+
     def generate_players(self, number_of_human_players):
         risk.logger.debug("Generating %s human players" % \
             number_of_human_players)
@@ -112,6 +116,16 @@ class GameMaster(object):
     def end_turn(self):
         self._select_next_player()
 
+    # actions that trigger event callbacks
+    def event_action(function):
+        risk.logger.debug('Calling end action %s callback' % function)
+        def function_with_callback(self, *args):
+            result = function(self, *args)
+            for callback in self.end_action_callbacks:
+                callback(self, function, result)
+            return result
+        return function_with_callback
+
     ###########################################################################
     ## Game state queries
     #
@@ -146,6 +160,7 @@ class GameMaster(object):
                 player_territories[name] = territory
         return player_territories
 
+    @event_action
     def player_attack(self, player, origin_name, target_name):
         origin = self.player_territories(player)[origin_name]
         target = self.board.territories()[target_name]

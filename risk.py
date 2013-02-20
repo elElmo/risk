@@ -20,6 +20,8 @@ def app_setup():
     # dev build defaults to debug for now
     parser.add_argument('--verbose', '-v', action='count',
                         help='extra output', default=risk.logger.LEVEL_DEBUG)
+    parser.add_argument('--gui', '-g', action='store_true',
+                        help='graphical display', default=False)
     settings = parser.parse_args()
     risk.logger.LOG_LEVEL = settings.verbose
     return settings
@@ -79,6 +81,105 @@ def run_game(game_master):
         game_master.end_game()
     risk.logger.debug('User quit the game!') 
 
+def graphical_run_game(game_master):
+    import pygame
+    from pygame.locals import *
+    pygame.init()
+    window = pygame.display.set_mode((640, 480))
+    pygame.display.set_caption('RiskPy')
+
+    board = pygame.image.load('resources/risk_board.png').convert()
+    board = pygame.transform.scale(board, (640, 480))
+
+    rgb_codes = [
+        (255, 0, 0), # red
+        (0, 255, 0), # green
+        (0, 0, 255), # blue
+        (255, 255, 0), # yellow
+        (160, 32, 240), # purple
+        (165, 42, 42), # brown
+    ]
+    player_colour_mapping = {None: (255, 255, 255)}
+    for player in  game_master.players:
+        player_colour_mapping[player] = rgb_codes.pop()
+    
+    display_refresh.mapping = player_colour_mapping
+    display_refresh.board = board
+    display_refresh.window = window   
+
+    game_master.add_end_turn_callback(display_refresh)
+    game_master.add_end_action_callback(display_refresh)
+    game_master.add_end_action_callback(refresh_delay)
+    display_refresh(game_master)
+    run_game(game_master)
+    #while True:
+    #    window.blit(board, (0, 0))
+    #    pygame.display.flip()
+
+def refresh_delay(game_master, event_type, result):
+    import time
+    risk.logger.debug("delaying refresh...")
+    time.sleep(1/2)
+
+def display_refresh(game_master, event_type=None, result=None):
+    import pygame
+    if not hasattr(display_refresh, 'coordinates'):
+        display_refresh.coordinates = {
+            # North America
+            'alaska' : (60, 75),
+            'northwest_territory': (120, 75),
+            'alberta': (110, 110),
+            'ontario': (150, 120),
+            'greenland': (230, 50),
+            'eastern_canada': (190, 120),
+            'western_united_states': (115, 155),
+            'eastern_united_states': (170, 160),
+            'central_america': (115, 210),
+            ## Central America
+            'venezuela': (160, 260),
+            'brazil': (200, 300),
+            'peru': (165, 320),
+            'argentina': (175, 360),
+            ## Africa
+            'north_africa': (300, 280),
+            'egypt': (345, 270),
+            'east_africa': (370, 320),
+            'central_africa': (345, 340),
+            'south_africa': (355, 400),
+            'madagascar': (400, 410),
+            ## Europe
+            'iceland': (280, 100),
+            'great_britain': (265, 145),
+            'western_europe': (275, 220),
+            'northern_europe': (320, 160),
+            'southern_europe': (320, 195),
+            'scandinavia': (320, 100),
+            'russia': (380, 120),
+            ## Asia
+            'kamchatka': (560, 70),
+            'yakutsk': (510, 70),
+            'siberia': (470, 90),
+            'ural': (440, 120),
+            'afghanistan': (425, 180),
+            'middle_east': (390, 240),
+            'india': (460, 240),
+            'southern_asia': (505, 260),
+            'china': (500, 210),
+            'mongolia': (510, 160),
+            'irkutsk': (510, 115),
+            'japan': (575, 165),
+            ## Australia
+            'indonesia': (520, 340),
+            'new_guinea': (570, 320),
+            'western_australia': (540, 400),
+            'eastern_australia': (590, 390),
+        }
+    display_refresh.window.blit(display_refresh.board, (0, 0))    
+    for name, coordinate in display_refresh.coordinates.iteritems():
+        risk.logger.debug("drawing %s!" % name)
+        pygame.draw.circle(display_refresh.window, display_refresh.mapping[game_master.board[name].owner], coordinate, 10)
+    pygame.display.flip()
+
 def run_turn(game_master):
     risk.logger.debug('Current player is: %s' % 
                       game_master.current_player().name)
@@ -90,4 +191,7 @@ if __name__ == '__main__':
     settings = app_setup()
     risk.logger.debug(settings)
     master = game_setup(settings)
-    run_game(master)
+    if not settings.gui:
+        run_game(master)
+    else:
+        graphical_run_game(master)
