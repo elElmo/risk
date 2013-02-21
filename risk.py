@@ -178,6 +178,9 @@ def display_refresh(game_master, event_type=None, result=None):
     for name, coordinate in display_refresh.coordinates.iteritems():
         risk.logger.debug("drawing %s!" % name)
         pygame.draw.circle(display_refresh.window, display_refresh.mapping[game_master.board[name].owner], coordinate, 10)
+        font = pygame.font.Font(None, 16)
+        text = font.render("%02d" % game_master.board[name].armies, False, (0, 0, 0))
+        display_refresh.window.blit(text, (coordinate[0] - 5, coordinate[1] - 5))
     pygame.display.flip()
 
 def run_turn(game_master):
