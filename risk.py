@@ -176,6 +176,10 @@ def display_refresh(game_master, event_type=None, result=None):
         }
     display_refresh.window.blit(display_refresh.board, (0, 0))    
     for name, coordinate in display_refresh.coordinates.iteritems():
+        territory = game_master.board[name]
+        for name, neighbour in territory.neighbours.iteritems():
+            pygame.draw.line(display_refresh.window, (0, 0, 0), coordinate, display_refresh.coordinates[neighbour.name])
+    for name, coordinate in display_refresh.coordinates.iteritems():
         risk.logger.debug("drawing %s!" % name)
         pygame.draw.circle(display_refresh.window, display_refresh.mapping[game_master.board[name].owner], coordinate, 10)
         font = pygame.font.Font(None, 16)
